@@ -247,7 +247,7 @@ fitch_nni <- function(tree, f) {
 }
 
 
-optim.fitch <- function(tree, data, trace = 1, rearrangements = "NNI", tree_log = NULL, ...) {
+optim.fitch <- function(tree, data, trace = 1, rearrangements = "NNI", ...) {
   assert_phylo(tree)
   assert_phyDat(data, label=tree$tip.label)
   assert_int(trace)
@@ -296,17 +296,12 @@ optim.fitch <- function(tree, data, trace = 1, rearrangements = "NNI", tree_log 
 
   m <- nr * (2L * nTips - 2L)
   on.exit({
-    if (!is.null(tree_log)){
-      print(tree_list)
-      write.tree(tree_list, file = tree_log)
-    }
     if (add_taxa) tree <- addTaxa(tree, attr(data, "duplicated"))
     tree <- unroot(tree)
     attr(tree, "pscore") <- pscore
     return(tree)
   })
   
-  tree_list <- list(tree)
   tree$edge.length <- NULL
   swap <- 0
   iter <- TRUE
@@ -331,8 +326,6 @@ optim.fitch <- function(tree, data, trace = 1, rearrangements = "NNI", tree_log 
         else{
           pscore <- psc
           tree <- tree2
-          next_pos = length(tree_list) + 1
-          tree_list[[next_pos]] <- tree
         }
       }
       #      if (rearrangements == "TBR") {}

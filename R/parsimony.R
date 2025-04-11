@@ -315,10 +315,10 @@ indexNNI <- function(tree) {
 #' @rdname parsimony
 #' @export
 optim.parsimony <- function(tree, data, method = "fitch", cost = NULL,
-                            trace = 1, rearrangements = "SPR", tree_log = NULL, ...) {
+                            trace = 1, rearrangements = "SPR", ...) {
   method <- match.arg(tolower(method), c("fitch", "sankoff"))
   if (method == "fitch") result <- optim.fitch(tree = tree, data = data,
-                      trace = trace, rearrangements = rearrangements, tree_log = tree_log, ...)
+                      trace = trace, rearrangements = rearrangements, ...)
   if (method == "sankoff") result <- optim.sankoff(tree = tree, data = data,
       cost = cost, trace = trace, ...)
   result
@@ -378,9 +378,8 @@ pratchet <- function(data, start = NULL, method = "fitch", maxit = 1000,
   }
 
     if(is.null(start)) start <- optim.parsimony(random.addition(data),
-				
                                    data, trace = trace-1, method = method,
-                                   rearrangements = rearrangements, tree_log = tree_log, ...)
+                                   rearrangements = rearrangements, ...)
     tree <- start
     label <- intersect(tree$tip.label, names(data))
     if (!is.binary(tree)){
@@ -395,7 +394,7 @@ pratchet <- function(data, start = NULL, method = "fitch", maxit = 1000,
       cat("Parsimony score of initial tree:", attr(tree, "pscore"), "\n")
   FUN <- function(data, tree, method, rearrangements, ...)
     optim.parsimony(tree, data = data, method = method,
-                    rearrangements = rearrangements, tree_log = tree_log, ...)
+                    rearrangements = rearrangements, ...)
   result <- tree
   if(!is.null(attr(data, "duplicated"))){
     result <- addTaxa(result, attr(data, "duplicated"))
@@ -403,6 +402,7 @@ pratchet <- function(data, start = NULL, method = "fitch", maxit = 1000,
   result <- relabel(result, ref)
 #  if (trace > 1) cat("optimize topology (NNI): ", pscore, "-->", psc, "\n")
   hr <- hash(result)
+  tree_list <- c()
   on.exit({
     if (!all && inherits(result, "multiPhylo")) result <- result[[1]]
     if (length(result) == 1) result <- result[[1]]
@@ -422,6 +422,9 @@ pratchet <- function(data, start = NULL, method = "fitch", maxit = 1000,
     }
     # for ratchet assign bs values
     attr(result, "env") <- env
+    if (!is.null(tree_log)){
+      write.tree(tree_list, file = tree_log)
+    }
     return(result)
   })
   kmax <- 1
@@ -436,14 +439,14 @@ pratchet <- function(data, start = NULL, method = "fitch", maxit = 1000,
       if(length(bs_ind) > 0){
         # p_trees <- random.addition(bs_data)  # 3 * ??
         p_trees <- optim.parsimony(tree, bs_data,
-          trace = trace, method = method, rearrangements = rearrangements, tree_log = tree_log, ...)
+          trace = trace, method = method, rearrangements = rearrangements, ...)
       }
       else p_trees <- stree(length(data), tip.label = names(data))
     }
     if (perturbation == "stochastic") p_trees <- rNNI(tree, floor(nTips / 2))
     if (perturbation == "random_addition") p_trees <- random.addition(data)
     trees <- optim.parsimony(p_trees, data, trace = trace, method = method,
-                             rearrangements = rearrangements, tree_log = tree_log, ...)
+                             rearrangements = rearrangements, ...)
     curr_tree <- trees
     if(!is.null(attr(data, "duplicated"))){
       p_trees <- addTaxa(p_trees, attr(data, "duplicated"))
@@ -455,12 +458,14 @@ pratchet <- function(data, start = NULL, method = "fitch", maxit = 1000,
     search_trees[[i]] <- trees
     pscores <- attr(trees, "pscore")
     mp1 <- min(pscores)
+    print(mp1)
     if ( (mp1 + eps) < mp) {
       kmax <- 1
       result <- trees
       tree <- curr_tree
       hr <- hash(trees)
       mp <- mp1
+      tree_list <- c(tree_list, c(p_trees))
     }
     else{
       kmax <- kmax + 1
