@@ -315,10 +315,10 @@ indexNNI <- function(tree) {
 #' @rdname parsimony
 #' @export
 optim.parsimony <- function(tree, data, method = "fitch", cost = NULL,
-                            trace = 1, rearrangements = "SPR", ...) {
+                            trace = 1, rearrangements = "SPR", log = NULL, ...) {
   method <- match.arg(tolower(method), c("fitch", "sankoff"))
   if (method == "fitch") result <- optim.fitch(tree = tree, data = data,
-                      trace = trace, rearrangements = rearrangements, ...)
+                      trace = trace, rearrangements = rearrangements, log = log, ...)
   if (method == "sankoff") result <- optim.sankoff(tree = tree, data = data,
       cost = cost, trace = trace, ...)
   result
@@ -421,7 +421,7 @@ pratchet <- function(data, start = NULL, method = "fitch", maxit = 1000,
       if (inherits(result, "multiPhylo")) result <- .compressTipLabel(result)
     }
     # for ratchet assign bs values
-    attr(result, "env") <- env
+    attr(result, "env") <- env # last entry is returned tree
     if (!is.null(tree_log)){
       write.tree(tree_list, file = tree_log)
     }
@@ -465,7 +465,6 @@ pratchet <- function(data, start = NULL, method = "fitch", maxit = 1000,
       tree <- curr_tree
       hr <- hash(trees)
       mp <- mp1
-      tree_list <- c(tree_list, c(p_trees))
     }
     else{
       kmax <- kmax + 1
@@ -477,6 +476,7 @@ pratchet <- function(data, start = NULL, method = "fitch", maxit = 1000,
         }
       }
     }
+    tree_list <- c(tree_list, c(result))
     if (trace >= 0 &&  (!i%%printevery))
       cat("\rIteration: ", i, ". Best parsimony score so far: ", mp, sep="")
     if ( (kmax >= k) && (i >= minit)) break()

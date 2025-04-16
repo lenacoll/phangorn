@@ -247,7 +247,7 @@ fitch_nni <- function(tree, f) {
 }
 
 
-optim.fitch <- function(tree, data, trace = 1, rearrangements = "NNI", ...) {
+optim.fitch <- function(tree, data, trace = 1, rearrangements = "NNI", log = NULL, ...) {
   assert_phylo(tree)
   assert_phyDat(data, label=tree$tip.label)
   assert_int(trace)
@@ -295,10 +295,12 @@ optim.fitch <- function(tree, data, trace = 1, rearrangements = "NNI", ...) {
   f <- init_fitch(data, FALSE, FALSE, m=4L)
 
   m <- nr * (2L * nTips - 2L)
+  tree_list = c(tree)
   on.exit({
     if (add_taxa) tree <- addTaxa(tree, attr(data, "duplicated"))
     tree <- unroot(tree)
     attr(tree, "pscore") <- pscore
+    if (!is.null(log)) write.tree(tree_list, file=log)
     return(tree)
   })
   
@@ -311,6 +313,7 @@ optim.fitch <- function(tree, data, trace = 1, rearrangements = "NNI", ...) {
     res <- fitch_nni(tree, f)
     tree <- res$tree
     psc <- res$pscore
+    tree_list <- c(tree_list, c(tree))
     if (trace > 1) cat("optimize topology (NNI): ", pscore, "-->", psc, "\n")
     if(psc < pscore) pscore <- psc
     swap <- swap + res$swap
