@@ -458,7 +458,7 @@ pratchet <- function(data, start = NULL, method = "fitch", maxit = 1000,
     search_trees[[i]] <- trees
     pscores <- attr(trees, "pscore")
     mp1 <- min(pscores)
-    print(mp1)
+    tree_list <- c(tree_list, c(p_trees))
     if ( (mp1 + eps) < mp) {
       kmax <- 1
       result <- trees
@@ -476,7 +476,6 @@ pratchet <- function(data, start = NULL, method = "fitch", maxit = 1000,
         }
       }
     }
-    tree_list <- c(tree_list, c(result))
     if (trace >= 0 &&  (!i%%printevery))
       cat("\rIteration: ", i, ". Best parsimony score so far: ", mp, sep="")
     if ( (kmax >= k) && (i >= minit)) break()
